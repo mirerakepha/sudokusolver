@@ -1,4 +1,6 @@
 #include "sudoku.h"
+#include <ncurses.h>
+
 
 Sudoku * createSudoku(Square *** squares, Box ** boxes){
     Sudoku * sudoku;
@@ -141,7 +143,87 @@ int checkPuzzle(Square *** sudoku, Box ** boxes)
 }
 
 
+int ** createPuzzle() {
 
+    int ** puzzle;
+    int i, j;
+
+    puzzle = malloc(sizeof(int*) * 9);
+    for (i = 0; i < 9; i++)
+        puzzle[i] = calloc(9, sizeof(int));
+
+    initscr();
+    noecho();
+    cbreak();
+    keypad(stdscr, TRUE);
+    curs_set(0);
+
+    int row = 0, col = 0;
+    int ch;
+
+    while (1) {
+
+        clear();
+
+        mvprintw(0, 0,
+            "Arrow keys move | 1-9 enter | 0 clears | ENTER solves");
+
+        int startY = 2;
+        int startX = 4;
+
+        mvprintw(startY, startX,
+                "+---------+---------+---------+");
+
+        for (i = 0; i < 9; i++) {
+
+            int y = startY + 1 + i + (i / 3);
+
+            mvprintw(y, startX, "|");
+
+            for (j = 0; j < 9; j++) {
+
+                int x = startX + 2 + j * 3 + (j / 3);
+
+                if (i == row && j == col)
+                    attron(A_REVERSE);
+
+                if (puzzle[i][j] == 0)
+                    mvprintw(y, x, ".");
+                else
+                    mvprintw(y, x, "%d", puzzle[i][j]);
+
+                if (i == row && j == col)
+                    attroff(A_REVERSE);
+
+                if ((j + 1) % 3 == 0)
+                    mvprintw(y, x + 2, "|");
+            }
+
+            if ((i + 1) % 3 == 0)
+                mvprintw(y + 1, startX,
+                        "+---------+---------+---------+");
+        }
+
+        refresh();
+        ch = getch();
+
+        if (ch == KEY_UP && row > 0) row--;
+        else if (ch == KEY_DOWN && row < 8) row++;
+        else if (ch == KEY_LEFT && col > 0) col--;
+        else if (ch == KEY_RIGHT && col < 8) col++;
+        else if (ch >= '1' && ch <= '9')
+            puzzle[row][col] = ch - '0';
+        else if (ch == '0' || ch == KEY_BACKSPACE)
+            puzzle[row][col] = 0;
+        else if (ch == '\n')
+            break;
+    }
+
+    endwin();
+    return puzzle;
+}
+
+/*
 int ** createPuzzle(){
     int ** puzzle;
     int i, j;
@@ -167,7 +249,7 @@ int ** createPuzzle(){
 
     for (i = 0; i < SIZE_ROWS; i++)
     {
-        puzzle[i] = (int*)malloc(sizeof(int*)*9);
+        puzzle[i] = malloc(sizeof(int)*9);
 
         for (j = 0; j < SIZE_COLUMNS; j++)
         {
@@ -179,6 +261,8 @@ int ** createPuzzle(){
     
     return puzzle;
 }
+
+*/
 
 
 void printPuzzle(Square *** puzzle){
