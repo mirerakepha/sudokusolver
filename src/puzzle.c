@@ -1,10 +1,23 @@
 #include "sudoku.h"
 
-Square *** setUpPuzzle(int ** puzzle){
+Sudoku * createSudoku(Square *** squares, Box ** boxes){
+    Sudoku * sudoku;
+    sudoku = malloc(sizeof(Sudoku));
+    sudoku -> squares = squares;
+    sudoku -> boxes = boxes;
+
+    return sudoku;
+
+}
+
+Sudoku * setUpPuzzle(int ** puzzle){
     Square *** sudoku;
+    Box ** boxes;
     int i, j, x;
+    int currentBox = 0;
 
     sudoku = (Square***)malloc(sizeof(Square**)*9);
+    boxes = createBoxes();
 
     for (i = 0; i < SIZE_ROWS; i++)
     {
@@ -12,7 +25,7 @@ Square *** setUpPuzzle(int ** puzzle){
         
         for (j = 0; j < SIZE_COLUMNS; j++)
         {
-            sudoku[i][j] = (Square*)malloc(sizeof(Square)*9);
+            sudoku[i][j] = malloc(sizeof(Square));
 
             sudoku[i][j] -> number = puzzle[i][j];
 
@@ -21,13 +34,33 @@ Square *** setUpPuzzle(int ** puzzle){
 
             sudoku[i][j] -> solvable = 9;
 
+            boxes[currentBox] -> squares [ boxes[currentBox]->numbers ] = sudoku[i][j];
+            sudoku[i][j] -> box = boxes[currentBox];
+            boxes[currentBox] -> numbers++;
+
             for (x = 0; x < SIZE_ROWS; x++)
             {
                 sudoku[i][j]->possible[x] = 0;
             }
-             
+
+            //go to the next box as the array increases 
+            if (j == 2)
+                currentBox++;
+            
+            if (j == 5)
+                currentBox++;
+                                     
         }
-        
+        //go back to the firstbox after comleting a loop for the first line
+        currentBox -= 2;
+
+        //on reaching the last line of the 3rd box;row;column we go to the box 4
+        if (i == 2)
+            currentBox = 3;
+
+        if (i == 5)
+            currentBox = 6;
+                
     }
 
      for (i = 0; i < SIZE_ROWS; i++)
@@ -38,6 +71,7 @@ Square *** setUpPuzzle(int ** puzzle){
             {
                 sudoku[i][j]->solvable = 0;
                 updateSudoku(sudoku, i, j);
+                updateBoxes(sudoku, i, j);
                 UNSOLVED--;
             }
             
@@ -45,7 +79,7 @@ Square *** setUpPuzzle(int ** puzzle){
         }
     }
 
-    return sudoku;
+    return createSudoku(sudoku, boxes);
 }
 
 int updateSudoku(Square *** sudoku, int row, int column){
@@ -80,7 +114,7 @@ int updateSudoku(Square *** sudoku, int row, int column){
 }
 
 
-int checkPuzzle(Square *** sudoku)
+int checkPuzzle(Square *** sudoku, Box ** boxes)
 {
     int i, j, k;
     for (i = 0; i < SIZE_ROWS; i++)
@@ -91,11 +125,19 @@ int checkPuzzle(Square *** sudoku)
             {
                 solveSquare(sudoku[i][j]);
                 updateSudoku(sudoku, i, j);
+                updateBoxes(sudoku, i, j);
+
+                return 1;
             }
 
         }
     }
-    return 0;
+
+    if (boxSingles(sudoku, boxes))
+        return 1;
+
+    return checkRows(sudoku, boxes);    
+    
 }
 
 
@@ -144,7 +186,7 @@ void printPuzzle(Square *** puzzle){
 
     //top border
     printf("\n");
-    printf("\t-------------------------------\n");
+    printf("\t+---------+---------+---------+\n");
 
     for (i = 0; i < SIZE_ROWS; i++)
     {
@@ -164,7 +206,7 @@ void printPuzzle(Square *** puzzle){
 
         //border after every 3 rows
         if(((i + 1)%3) == 0 ){
-            printf("\t-------------------------------\n");
+            printf("\t+---------+---------+---------+\n");
            }
         
     }
